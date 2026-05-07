@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Territorial de Huella Ecológica - Chapinero</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: #f1f5f9;
+            overflow-x: hidden;
+            margin: 0;
+        }
+
+        .stars-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: twinkle var(--duration) infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .card-main {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 2rem;
+            color: #1e293b;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: all 0.5s ease;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 4px;
+        }
+
+        .btn-next {
+            background: #10b981;
+            color: white;
+            padding: 1rem 2.5rem;
+            border-radius: 1rem;
+            font-weight: 700;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-next:hover {
+            background: #059669;
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .data-box {
+            background: #f8fafc;
+            border-radius: 1rem;
+            padding: 1.25rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .urban-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+        }
+
+        .urban-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid #f1f5f9;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .planet-container {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 2.5rem;
+            flex-wrap: wrap;
+        }
+
+        .earth-draw {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #4facfe 0%, #00f2fe 10%, #2575fc 60%, #111827 100%);
+            box-shadow: 
+                inset -10px -10px 20px rgba(0,0,0,0.6),
+                0 0 30px rgba(16, 185, 129, 0.3);
+            position: relative;
+            overflow: hidden;
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .earth-draw::before {
+            content: "";
+            position: absolute;
+            width: 160%;
+            height: 160%;
+            background: 
+                radial-gradient(circle at 35% 45%, #10b981 15%, transparent 35%),
+                radial-gradient(circle at 65% 35%, #059669 20%, transparent 40%),
+                radial-gradient(circle at 25% 25%, #34d399 12%, transparent 28%),
+                radial-gradient(circle at 55% 65%, #047857 25%, transparent 50%),
+                radial-gradient(circle at 80% 80%, #064e3b 15%, transparent 30%);
+            opacity: 0.95;
+            filter: blur(1.5px);
+            transform: rotate(-15deg);
+        }
+
+        .earth-draw::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(circle at 50% 50%, rgba(255,255,255,0.3) 0%, transparent 80%),
+                linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.1) 50%, transparent 60%);
+            filter: blur(4px);
+        }
+
+        .earth-partial {
+            clip-path: inset(0 88% 0 0);
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .partial-container {
+            position: relative;
+            width: 100px;
+            height: 100px;
+        }
+
+        .partial-ghost {
+            opacity: 0.1;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+        }
+
+        .result-screen {
+            background: linear-gradient(135deg, #1e3a44 0%, #0f172a 100%);
+            color: white;
+            border-radius: 2rem;
+            padding: 3rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.4);
+        }
+
+        .ref-box {
+            font-size: 10px;
+            line-height: 1.4;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .emision-tag {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .tree-comparison {
+            display: flex;
+            align-items: flex-end;
+            gap: 1rem;
+            height: 120px;
+            padding-bottom: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .tree-bar {
+            flex: 1;
+            background: #10b981;
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            transition: height 1s ease-out;
+        }
+
+        .tree-bar-label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 8px;
+            font-weight: 800;
+            white-space: nowrap;
+            color: #64748b;
+        }
+
+        .tree-bar-value {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 9px;
+            font-weight: 900;
+            color: #059669;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="stars-bg" id="starsContainer"></div>
+
+    <div class="max-w-4xl mx-auto py-12 px-4 relative z-10">
+        
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight uppercase">Huella Ecológica Chapinero</h1>
+            <p class="text-emerald-400 font-bold tracking-widest uppercase text-xs">Análisis Metabólico Territorial</p>
+        </div>
+
+        <div class="w-full bg-slate-800 h-2 rounded-full mb-8 overflow-hidden">
+            <div id="progressFill" class="progress-fill" style="width: 14%"></div>
+        </div>
+
+        <div class="card-main p-8 md:p-14 min-h-[600px] flex flex-col">
+            
+            <!-- Paso 0: Territorio -->
+            <div id="step0" class="step-content">
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <h2 class="text-3xl font-bold mb-6 flex items-center gap-3">🗺️ <span class="text-slate-800">Uso del Suelo</span></h2>
+                        <div class="grid grid-cols-1 gap-3 mb-6">
+                            <div class="flex justify-between p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                                <span class="text-sm font-semibold">Agricultura</span>
+                                <span class="text-emerald-700 font-bold">3,19%</span>
+                            </div>
+                            <div class="flex justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
+                                <span class="text-sm font-semibold">Actividades mixtas</span>
+                                <span class="text-blue-700 font-bold">2,47%</span>
+                            </div>
+                            <div class="flex justify-between p-3 bg-amber-50 rounded-lg border border-amber-100">
+                                <span class="text-sm font-semibold">Ganadería</span>
+                                <span class="text-amber-700 font-bold">12,38%</span>
+                            </div>
+                        </div>
+                        <p class="text-slate-500 text-xs italic">Extensión total: 1.315,9 ha. Presión sobre Cerros Orientales.</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="inline-block p-8 bg-emerald-50 rounded-full border-4 border-emerald-200 mb-4 shadow-inner">
+                            <p class="text-4xl font-black text-emerald-600 tracking-tighter">+52 km</p>
+                            <p class="text-[10px] uppercase font-black text-emerald-800 tracking-widest">Reserva Forestal</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-auto pt-10 flex justify-end">
+                    <button onclick="nextStep(1)" class="btn-next">Siguiente: Urbanización 🌆</button>
+                </div>
+            </div>
+
+            <!-- Paso 1: Urbanización y Huella Ecológica -->
+            <div id="step1" class="step-content hidden">
+                <h2 class="text-3xl font-bold mb-6 flex items-center gap-3">🌆 <span class="text-slate-800">Morfología Urbana</span></h2>
+                
+                <div class="mb-8">
+                    <p class="text-sm text-slate-600 mb-6">
+                        Alta huella de suelo construido por predominancia de concreto y alta impermeabilización del suelo.
+                    </p>
+                    
+                    <div class="urban-grid mb-6">
+                        <div class="urban-item border-b-4 border-blue-500">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Superficie</p>
+                            <p class="text-xl font-black text-slate-700">+16M m²</p>
+                            <p class="text-[9px] text-slate-400">Construidos</p>
+                        </div>
+                        <div class="urban-item border-b-4 border-slate-500">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Catastro</p>
+                            <p class="text-xl font-black text-slate-700">177.315</p>
+                            <p class="text-[9px] text-slate-400">Predios totales</p>
+                        </div>
+                        <div class="urban-item border-b-4 border-amber-600">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Materialidad</p>
+                            <p class="text-xs font-bold text-slate-700">Concreto / Bloque</p>
+                            <p class="text-[9px] text-slate-400">Impermeabilización</p>
+                        </div>
+                    </div>
+
+                    <div class="data-box bg-blue-50 border-blue-100">
+                        <h4 class="text-xs font-black text-blue-800 mb-3 flex items-center gap-2">⚡ Impacto Energético de Densificación Vertical</h4>
+                        <div class="grid grid-cols-2 gap-4 text-[11px]">
+                            <ul class="space-y-1 list-disc pl-4 text-slate-700 font-medium">
+                                <li>Mayor demanda eléctrica</li>
+                                <li>Uso de ascensores</li>
+                                <li>Iluminación común</li>
+                            </ul>
+                            <ul class="space-y-1 list-disc pl-4 text-slate-700 font-medium">
+                                <li>Consumo compartido</li>
+                                <li>Climatización</li>
+                                <li>Servicios integrados</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ref-box">
+                    <strong>Fuentes:</strong> Estrenar Vivienda, Distrito CH (Arquitectura), Reddit (Tendencias residenciales).
+                </div>
+
+                <div class="mt-auto pt-10 flex justify-between">
+                    <button onclick="nextStep(0)" class="text-slate-400 font-bold uppercase text-xs tracking-widest">Atrás</button>
+                    <button onclick="nextStep(2)" class="btn-next">Siguiente: Biocapacidad 🌳</button>
+                </div>
+            </div>
+
+            <!-- Paso 2: Arbolado Urbano y Biocapacidad -->
+            <div id="step2" class="step-content hidden">
+                <h2 class="text-3xl font-bold mb-6 flex items-center gap-3">🌳 <span class="text-slate-800">Biocapacidad Arbórea</span></h2>
+                
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <p class="text-sm text-slate-600 mb-4">
+                            Chapinero posee <strong>7,15 m²/hab</strong> de zonas verdes, pero su densidad arbórea es baja comparada con el norte de la ciudad.
+                        </p>
+                        <div class="tree-comparison">
+                            <div class="tree-bar" style="height: 100%;">
+                                <span class="tree-bar-value">321.176</span>
+                                <span class="tree-bar-label">Suba</span>
+                            </div>
+                            <div class="tree-bar" style="height: 42%; opacity: 0.7;">
+                                <span class="tree-bar-value">133.527</span>
+                                <span class="tree-bar-label">Usaquén</span>
+                            </div>
+                            <div class="tree-bar" style="height: 18%; background: #059669;">
+                                <span class="tree-bar-value">58.583</span>
+                                <span class="tree-bar-label">Chapinero</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="data-box bg-emerald-50 border-emerald-100">
+                            <h4 class="text-[10px] font-black text-emerald-800 uppercase mb-2">🌱 Captura de Carbono Estimada</h4>
+                            <p class="text-2xl font-black text-emerald-600">1.464,6 <span class="text-xs">Ton CO₂/año</span></p>
+                            <p class="text-[9px] text-emerald-500 mt-1">Cálculo: 58.583 árboles × 25kg CO₂</p>
+                        </div>
+                        <div class="p-4 bg-slate-50 rounded-xl text-[11px] text-slate-500 border border-slate-100">
+                            <p><strong>Nota:</strong> Los Cerros Orientales (+52 km) actúan como el pulmón compensatorio principal de la localidad.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ref-box">
+                    <strong>Fuentes:</strong> Observatorio Ambiental de Bogotá (2025), EcoTree.
+                </div>
+
+                <div class="mt-auto pt-10 flex justify-between">
+                    <button onclick="nextStep(1)" class="text-slate-400 font-bold uppercase text-xs tracking-widest">Atrás</button>
+                    <button onclick="nextStep(3)" class="btn-next">Siguiente: Alimentación 🌾</button>
+                </div>
+            </div>
+
+            <!-- Paso 3: Alimentación -->
+            <div id="step3" class="step-content hidden">
+                <h2 class="text-3xl font-bold mb-6 flex items-center gap-3">🌾 <span class="text-slate-800">Sistema Alimentario</span></h2>
+                
+                <p class="text-sm text-slate-600 mb-6">
+                    Producción individual rotativa insuficiente para la demanda. Hato ganadero local de <strong>~170 animales</strong>.
+                </p>
+
+                <div class="grid md:grid-cols-2 gap-6 mb-4">
+                    <div class="data-box border-l-4 border-emerald-500">
+                        <h4 class="text-[10px] font-bold uppercase text-slate-400 mb-2">Abastecimiento Oct 2025 (Ton)</h4>
+                        <ul class="space-y-1 text-xs">
+                            <li class="flex justify-between"><span>Vacuno:</span> <span class="font-bold">14.119 (↑ 6.7%)</span></li>
+                            <li class="flex justify-between"><span>Porcino:</span> <span class="font-bold">9.200</span></li>
+                            <li class="flex justify-between"><span>Otros Alimentos:</span> <span class="font-bold">26.422</span></li>
+                        </ul>
+                        <p class="text-[10px] text-slate-400 mt-3 border-t pt-2">Demanda Externa: 49.741 Ton/mes</p>
+                    </div>
+                    <div class="data-box bg-amber-50 border-amber-100">
+                        <p class="text-xs text-amber-900 leading-snug italic">
+                            "La baja biocapacidad de carga del suelo local obliga a importar recursos de otras regiones para alimentar a los residentes de Chapinero."
+                        </p>
+                    </div>
+                </div>
+
+                <div class="ref-box">
+                    <strong>Referencia:</strong> Martínez, R. et al. (2018). Manual de manejo agronómico. Agrosavia.
+                </div>
+
+                <div class="mt-auto pt-10 flex justify-between">
+                    <button onclick="nextStep(2)" class="text-slate-400 font-bold uppercase text-xs tracking-widest">Atrás</button>
+                    <button onclick="nextStep(4)" class="btn-next">Siguiente: Energía ⚡</button>
+                </div>
+            </div>
+
+            <!-- Paso 4: Energía -->
+            <div id="step4" class="step-content hidden">
+                <h2 class="text-3xl font-bold mb-6 flex items-center gap-3">⚡ <span class="text-slate-800">Demanda Eléctrica</span></h2>
+                <p class="text-slate-600 mb-6">Proyección de demanda MVA acelerada por densificación habitacional:</p>
+                
+                <div class="grid grid-cols-3 gap-4 mb-8">
+                    <div class="text-center p-4 bg-slate-50 rounded-xl">
+                        <p class="text-[10px] font-bold mb-1">2023</p>
+                        <p class="text-xl font-bold text-slate-700">3.510</p>
+                    </div>
+                    <div class="text-center p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                        <p class="text-[10px] font-bold mb-1">2025</p>
+                        <p class="text-xl font-bold text-emerald-700">3.990</p>
+                        <span class="text-[9px] font-bold text-emerald-500">+13.6%</span>
+                    </div>
+                    <div class="text-center p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                        <p class="text-[10px] font-bold mb-1">2030</p>
+                        <p class="text-xl font-bold text-blue-700">5.550</p>
+                        <span class="text-[9px] font-bold text-blue-500">+39.1%</span>
+                    </div>
+                </div>
+
+                <div class="data-box bg-slate-50 text-xs">
+                    <p class="font-semibold text-slate-500 uppercase text-[10px] mb-1">Consumo Subsistencia</p>
+                    <p class="text-slate-700">Estimado: <strong>130 kWh / mes</strong> por hogar de estrato medio en la localidad.</p>
+                </div>
+
+                <div class="ref-box">
+                    <strong>Referencia:</strong> ProBogotá Región (2024). Déficit de transmisión y demanda.
+                </div>
+
+                <div class="mt-auto pt-10 flex justify-between">
+                    <button onclick="nextStep(3)" class="text-slate-400 font-bold uppercase text-xs tracking-widest">Atrás</button>
+                    <button onclick="nextStep(5)" class="btn-next">Siguiente: Movilidad 🚗</button>
+                </div>
+            </div>
+
+            <!-- Paso 5: Movilidad y Residuos -->
+            <div id="step5" class="step-content hidden">
+                <h2 class="text-3xl font-bold mb-6 flex items-center gap-3">🚗 <span class="text-slate-800">Metabolismo Urbano</span></h2>
+                
+                <div class="grid md:grid-cols-2 gap-8 mb-4">
+                    <div class="space-y-2">
+                        <p class="text-xs font-bold uppercase text-slate-400 mb-2">Emisiones CO₂ por Medio</p>
+                        <div class="emision-tag bg-red-50 border border-red-100 text-red-700">
+                            <span>Moto >150 cc</span> <span class="font-bold">167 g/km</span>
+                        </div>
+                        <div class="emision-tag bg-blue-50 border border-blue-100 text-blue-700">
+                            <span>Automóvil</span> <span class="font-bold">93.5 g/km</span>
+                        </div>
+                        <div class="emision-tag bg-slate-800 text-white">
+                            <span>TransMilenio</span> <span class="font-bold">3,4 mg/km</span>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="data-box bg-slate-50">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase">Residuos Sólidos</p>
+                            <p class="text-xl font-black">360 kg <span class="text-xs font-normal">/hab/año</span></p>
+                            <p class="text-[10px] mt-2 italic text-slate-400">Generación promedio local.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ref-box">
+                    <strong>Referencia:</strong> Observatorio Ambiental de Bogotá y Análisis Scielo (2024).
+                </div>
+
+                <div class="mt-auto pt-10 flex justify-between">
+                    <button onclick="nextStep(4)" class="text-slate-400 font-bold uppercase text-xs tracking-widest">Atrás</button>
+                    <button onclick="calculateResults()" class="btn-next">Finalizar Análisis ✨</button>
+                </div>
+            </div>
+
+            <!-- Paso 6: Resultados -->
+            <div id="step6" class="step-content hidden">
+                <div class="result-screen text-center">
+                    <div class="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20" id="resultStars"></div>
+                    <h2 class="text-6xl font-black mb-4">2.12 Tierras</h2>
+                    <div class="planet-container" id="planetList">
+                        <div class="earth-draw"></div>
+                        <div class="earth-draw" style="animation-delay: 0.5s"></div>
+                        <div class="partial-container" style="animation: float 4s ease-in-out infinite; animation-delay: 1s">
+                            <div class="earth-draw partial-ghost"></div>
+                            <div class="earth-draw earth-partial"></div>
+                        </div>
+                    </div>
+                    <div class="mt-12 space-y-6">
+                        <div class="inline-block px-8 py-4 bg-white/10 backdrop-blur rounded-2xl border border-white/20">
+                            <p class="text-sm font-bold uppercase tracking-widest text-emerald-300">Huella Ecológica Total Estimada</p>
+                            <p class="text-4xl font-black">92.345 <span class="text-lg">gha</span></p>
+                        </div>
+                        <p class="text-xs text-emerald-100/70 max-w-lg mx-auto leading-relaxed">
+                            A pesar de la captura de <strong>1.464 Ton CO₂</strong> por los 58.583 árboles, el metabolismo de Chapinero (importación masiva de alimentos y demanda energética de 16M m² construidos) genera un déficit que requiere más de 2 planetas.
+                        </p>
+                    </div>
+                    <button onclick="location.reload()" class="mt-10 text-[10px] font-black uppercase tracking-[0.2em] opacity-50 hover:opacity-100 transition-opacity cursor-pointer">Reiniciar Simulación</button>
+                </div>
+            </div>
+
+        </div>
+
+        <footer class="mt-10 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+            Chapinero Territorial • Bogotá D.C. • Metabolismo Urbano 2025
+        </footer>
+
+    </div>
+
+    <script>
+        const starsContainer = document.getElementById('starsContainer');
+        for (let i = 0; i < 150; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = `${Math.random() * 100}%`;
+            star.style.top = `${Math.random() * 100}%`;
+            const size = Math.random() * 2 + 1;
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+            star.style.setProperty('--duration', `${Math.random() * 3 + 2}s`);
+            starsContainer.appendChild(star);
+        }
+
+        function nextStep(step) {
+            document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`step${step}`).classList.remove('hidden');
+            const progress = ((step + 1) / 7) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function calculateResults() {
+            nextStep(6);
+            const resultStars = document.getElementById('resultStars');
+            for (let i = 0; i < 60; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.width = '2px';
+                star.style.height = '2px';
+                star.style.setProperty('--duration', `${Math.random() * 1.5 + 0.5}s`);
+                resultStars.appendChild(star);
+            }
+        }
+    </script>
+</body>
+</html>
